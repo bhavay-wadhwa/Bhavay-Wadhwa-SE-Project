@@ -4,6 +4,8 @@ import os
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 import numpy as np
+import threading
+import winsound
 
 
 app = Flask(__name__)
@@ -52,6 +54,9 @@ def is_near(distance, threshold=4.0):
     Determine if the object is near based on the distance threshold.
     """
     return distance < threshold
+
+def send_alert():
+    winsound.Beep(1000, 500)  # 1000 Hz for 500 ms
 
 def track_objects(frame, detections):
     global prev_frame, prev_points
@@ -126,8 +131,9 @@ def detect_and_alert(frame):
                 detections_summary["vehicles_detected"] += 1
 
         detections_summary["total_detections"] = detections_summary["pedestrians_detected"] + detections_summary["vehicles_detected"]
-
         
+        if alerts:
+            threading.Thread(target=send_alert).start()
 
     frame_count += 1
     return frame
@@ -246,3 +252,4 @@ def stats():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
