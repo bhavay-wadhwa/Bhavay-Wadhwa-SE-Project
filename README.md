@@ -10,12 +10,12 @@ This repository is a part of the Software Engineering Project for the course 'So
 - Dr. Kanu Goel  Ma'am
 
 **Team Members:**  
-| Name | SID | Contribution |
-|------|------|--------------|
-| Bhavay Wadhwa | 23106016 | Model testing, data preprocessing |
-| Rupesh Sharma | 23106020 | Backend integration, dataset handling |
-| Guntaas Kapoor | 23106026 | Project architecture, documentation |
-| Harjapan Singh Bhatia | 23106002 | YOLO fine-tuning, distance estimation module |
+| Name | SID |
+|------|------|
+| Bhavay Wadhwa | 23106016 |
+| Rupesh Sharma | 23106020 |
+| Guntaas Kapoor | 23106026 |
+| Harjapan Singh Bhatia | 23106002 |
 
 ---
 
@@ -78,24 +78,6 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 ---
 
 ## 📂 Repository Structure
-
-SE-Pedestrian-and-Vehicle-Detection-RT/
-│
-├── datasets/                # Training/validation datasets (BDD100K subset)
-├── models/                  # YOLOv9 model weights and configurations
-├── notebooks/               # Experimentation and training notebooks
-├── src/
-│   ├── detection.py         # YOLOv9 object detection
-│   ├── tracking.py          # DeepSORT tracking module
-│   ├── distance_estimation.py # Pinhole distance estimation algorithm
-│   ├── alerts.py            # Warning and alert management
-│   └── app.py               # Flask backend for live video and API
-│
-├── static/                  # Frontend assets (CSS, JS, icons)
-├── templates/               # Flask templates for UI
-├── requirements.txt         # Dependencies
-├── README.md                # Project documentation (this file)
-└── results/                 # Output logs, performance reports, etc.
 
 
 ---
