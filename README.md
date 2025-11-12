@@ -6,8 +6,8 @@ This repository is a part of the Software Engineering Project for the course 'So
 ### Minor Project – DSP5101
 
 **Mentors:**  
-Dr. Poonam Saini  
-Dr. Kanu Goel  
+- Dr. Poonam Saini  Ma'am
+- Dr. Kanu Goel  Ma'am
 
 **Team Members:**  
 | Name | SID | Contribution |
@@ -38,15 +38,14 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 
 ## ⚙️ Tech Stack
 
-- **Programming Language:** Python  
-- **Deep Learning Framework:** PyTorch  
+- **Programming Language:** Python, HTML, CSS 
+- **Deep Learning Framework:** PyTorch, VGG16  
 - **Model Architecture:** YOLOv9 (Ultralytics)  
 - **Computer Vision Library:** OpenCV  
-- **Tracking Algorithm:** DeepSORT  
+- **Tracking Algorithm:** Pinhole Camera, DeepSORT  
 - **Web Framework:** Flask  
 - **Dataset:** BDD100K / BDD10K (Berkeley DeepDrive)  
 - **Visualization:** Matplotlib, OpenCV  
-- **Deployment:** Edge/Local System (real-time camera input)
 
 ---
 
@@ -67,10 +66,10 @@ This project contributes to intelligent transportation systems (ITS) and autonom
   The model was fine-tuned using the **BDD10K dataset**, improving domain adaptation for road and urban scenes.  
 
 - **Distance Estimation:**  
-  Uses the formula:  
-  \[
-  \text{Distance} = \frac{\text{Known Width} \times \text{Focal Length}}{\text{Perceived Width}}
-  \]
+  Uses the formula:
+  
+  Distance = (Known Width × Focal Length) / Perceived Width
+  
   This allows real-time distance approximation from single-camera input.  
 
 - **Tracking:**  
