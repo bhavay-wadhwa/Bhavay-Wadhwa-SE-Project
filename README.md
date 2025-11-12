@@ -1,25 +1,19 @@
-# SE-Pedestrian-and-Vehicle-Detection-RT
+# Real Time Vehicle and Pedestrian Detection
 This repository is a part of the Software Engineering Project for the course 'Software Engineering' DSN5003 at Punjab Engineering College (PEC), Chandigarh.
 
-# 🚗 Real-Time Vehicle and Pedestrian Detection
 
-### Minor Project – DSP5101
-
-**Mentors:**  
-- Dr. Poonam Saini  Ma'am
-- Dr. Kanu Goel  Ma'am
 
 **Team Members:**  
 | Name | SID |
 |------|------|
-| Bhavay Wadhwa | 23106016 |
-| Rupesh Sharma | 23106020 |
-| Guntaas Kapoor | 23106026 |
-| Harjapan Singh Bhatia | 23106002 |
+| [Bhavay Wadhwa](https://github.com/bhavay-wadhwa) | 23106016 |
+| [Rupesh Sharma](https://github.com/Rupesh7722) | 23106020 |
+| [Guntaas Kapoor](https://github.com/guntaaskapoor24) | 23106026 |
+| [Harjapan Singh Bhatia](https://github.com/HARJAPAN2005) | 23106002 |
 
 ---
 
-## 📘 Project Overview
+## Overview
 
 The **Real-Time Vehicle and Pedestrian Detection** system is designed to enhance **road safety** by detecting vehicles and pedestrians in real-time using advanced computer vision techniques. The system provides **accurate localization**, **distance estimation**, and **live alerts**, making it suitable for **in-vehicle** and **roadside deployment** scenarios.
 
@@ -27,7 +21,7 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 
 ---
 
-## 🎯 Objectives
+## Objectives
 
 - Detect pedestrians and vehicles in **real time** from live camera feeds.  
 - Estimate distances to detected objects using the **monocular pinhole camera model**.  
@@ -36,7 +30,7 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
 - **Programming Language:** Python, HTML, CSS 
 - **Deep Learning Framework:** PyTorch, VGG16  
@@ -49,7 +43,7 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 
 ---
 
-## 🧠 System Workflow
+## System Workflow
 
 1. **Input Feed:** Real-time video or dashcam stream.  
 2. **Detection:** YOLOv9 model detects objects (person, car, bus, truck, bike, etc.).  
@@ -60,7 +54,7 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 
 ---
 
-## 🧩 Implementation Details
+## Implementation Details
 
 - **YOLOv9 Fine-tuning:**  
   The model was fine-tuned using the **BDD10K dataset**, improving domain adaptation for road and urban scenes.  
@@ -77,12 +71,8 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 
 ---
 
-## 📂 Repository Structure
 
-
----
-
-## 🧾 References
+## References
 
 1. [Redmon et al., “You Only Look Once: Unified, Real-Time Object Detection”, CVPR 2016](https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Redmon_You_Only_Look_CVPR_2016_paper.pdf)  
 2. [Ultralytics YOLOv9 Documentation](https://docs.ultralytics.com/models/yolov9/)  
@@ -92,18 +82,11 @@ This project contributes to intelligent transportation systems (ITS) and autonom
 
 ---
 
-## 🚀 Future Work
+## Future Work
 
-- Integrate GPS data for geo-tagged alerts.  
 - Enhance detection for low-light and adverse weather.  
 - Implement mobile app integration for real-time driver assistance.  
 - Explore stereo or LiDAR-based distance refinement.
-
----
-
-## 🏁 Conclusion
-
-This project successfully demonstrates an **AI-powered real-time detection and alert system** for vehicles and pedestrians. It lays the groundwork for future **smart transportation and safety systems**, combining **deep learning**, **computer vision**, and **edge computing** to improve road safety and situational awareness.
 
 ---
 
