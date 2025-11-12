@@ -166,6 +166,20 @@ def detect_file(filepath):
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     cap.release()
 
+def detect_photo(filepath):
+    """
+    Detect objects in a photo (single image).
+    """
+    frame = cv2.imread(filepath)
+    if frame is None:
+        print("Error: Could not read image.")
+        return None
+
+    frame = detect_and_alert(frame)
+    ret, buffer = cv2.imencode('.jpg', frame)
+    return buffer.tobytes()
+
+
 
 @app.route('/')
 def index():
@@ -204,6 +218,26 @@ def upload_video_feed():
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         return Response(detect_file(os.path.join(app.config['UPLOAD_FOLDER'], filename)), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/upload_photo', methods=['POST'])
+def upload_photo():
+    """
+    Endpoint to upload a photo and return the annotated image.
+    """
+    if 'file' not in request.files:
+        return 'No file part'
+    file = request.files['file']
+    if file.filename == '':
+        return 'No selected file'
+    if file:
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        detected_image = detect_photo(filepath)
+        if detected_image is not None:
+            return Response(detected_image, mimetype='image/jpeg')
+        else:
+            return 'Error processing image', 500
 
 @app.route('/stats')
 def stats():
