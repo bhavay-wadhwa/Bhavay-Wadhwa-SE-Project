@@ -1,3 +1,5 @@
+# (paste this entire file or replace the bottom part of your file with this corrected section)
+
 import os
 import time
 import sqlite3
@@ -43,6 +45,9 @@ settings = {
     "threshold": 2.0,     # meters (example)
     "alerts_enabled": True
 }
+
+# make sure we have a camera_active flag (was referenced but not initialized)
+camera_active = False
 
 # -------------------------
 # Database helpers & pool
@@ -200,6 +205,16 @@ def set_threshold():
     except Exception:
         return jsonify({"ok": False}), 400
 
+@app.route('/toggle_camera', methods=['POST'])
+def toggle_camera():
+    """
+    Toggle the camera_active flag. Returns a small status message used by the front-end.
+    """
+    global camera_active
+    camera_active = not camera_active
+    return ("Camera turned on" if camera_active else "Camera turned off"), 200
+
+
 @app.route('/toggle_alert', methods=["POST"])
 def toggle_alert():
     data = request.json or {}
@@ -287,4 +302,3 @@ if __name__ == '__main__':
 # - I can convert this to use Celery + Redis for scalable video processing,
 # - Or swap the sqlite DB for PostgreSQL + connection pooling (psycopg2 / asyncpg).
 #
-# Tell me which further upgrade you'd like and I'll produce the code.

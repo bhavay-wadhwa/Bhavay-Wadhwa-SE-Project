@@ -33,3 +33,37 @@ button, input[type="file"] {
 form {
     text-align: center;
 }
+/* Camera UI */
+#camera-status {
+    margin: 20px auto;
+    font-size: 18px;
+    color: #333;
+    text-align: center;
+}
+
+#toggle-camera-btn {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#toggle-camera-btn:hover {
+    background-color: #218838;
+}
+
+#camera-feed {
+    display: block;
+    margin: 20px auto;
+    border: 2px solid #333;
+    border-radius: 8px;
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
