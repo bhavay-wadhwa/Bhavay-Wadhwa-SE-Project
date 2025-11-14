@@ -1,255 +1,133 @@
-from flask import Flask, render_template, request, Response, jsonify
-import cv2
+from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask_socketio import SocketIO, emit
+import sqlite3
 import os
-from werkzeug.utils import secure_filename
-from ultralytics import YOLO
-import numpy as np
 import threading
-import winsound
+import time
+from datetime import datetime
+from werkzeug.utils import secure_filename
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+DB_PATH = os.path.join(BASE_DIR, "detections.db")
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+app = Flask(__name__, template_folder="Frontend-Files/templates", static_folder="Frontend-Files/static")
+app.config['UPLOAD_FOLDER'] = UPLOAD_DIR
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Load YOLOv9 model
-model = YOLO('./yolov9c.pt')
-
-# Classes
-human_class = 0
-vehicle_classes = [1, 2, 3, 5, 7]
-
-camera_active = False
-
-# Define constants for distance estimation
-KNOWN_WIDTH = 0.5  # Average shoulder width in meters (adjust based on your context)
-FOCAL_LENGTH = 700  # Camera focal length in pixels (adjust based on calibration)
-
-# Optical Flow parameters
-lk_params = dict(winSize=(15, 15), maxLevel=2, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-
-# Previous frame and points
-prev_frame = None
-prev_points = None
-
-frame_count = 0
-
-# Summary of detections
-detections_summary = {
-    "total_detections": 0,
-    "vehicles_detected": 0,
-    "pedestrians_detected": 0
+# In-memory settings
+settings = {
+    "threshold": 2.0,     # meters (example)
+    "alerts_enabled": True
 }
 
-def estimate_distance(box):
-    """
-    Estimate distance to the object based on the width of the bounding box.
-    """
-    box_width = box[2] - box[0]
-    distance = (KNOWN_WIDTH * FOCAL_LENGTH) / box_width
-    return distance
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS detections
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, obj_type TEXT, distance REAL)''')
+    conn.commit()
+    conn.close()
 
-def is_near(distance, threshold=4.0):
-    """
-    Determine if the object is near based on the distance threshold.
-    """
-    return distance < threshold
-
-def send_alert():
-    winsound.Beep(1000, 500)  # 1000 Hz for 500 ms
-
-def track_objects(frame, detections):
-    global prev_frame, prev_points
-
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    if prev_frame is None:
-        prev_frame = gray_frame
-
-    # Resize the gray_frame to match the size of prev_frame if they differ
-    if prev_frame.shape != gray_frame.shape:
-        gray_frame = cv2.resize(gray_frame, (prev_frame.shape[1], prev_frame.shape[0]))
-
-    # Initialize tracking points if there are new detections
-    if detections:
-        new_points = []
-        for result in detections.boxes:
-            box = result.xyxy[0].cpu().numpy()
-            cls = int(result.cls[0].cpu().numpy())
-            if cls in [human_class] + vehicle_classes:
-                new_points.append([(box[0] + box[2]) / 2, (box[1] + box[3]) / 2])
-        if new_points:
-            prev_points = np.float32(new_points).reshape(-1, 1, 2)
-
-    # Calculate optical flow if there are valid points
-    try:
-        if prev_points is not None and prev_points.size > 0:
-            next_points, status, _ = cv2.calcOpticalFlowPyrLK(prev_frame, gray_frame, prev_points, None, **lk_params)
-            for i, (new, old) in enumerate(zip(next_points, prev_points)):
-                a, b = new.ravel()
-                c, d = old.ravel()
-                speed = np.sqrt((a - c) ** 2 + (b - d) ** 2)
-                direction = np.arctan2(b - d, a - c) * 180 / np.pi
-                cv2.circle(frame, (int(a), int(b)), 5, (0, 255, 0), -1)
-                cv2.line(frame, (int(a), int(b)), (int(c), int(d)), (0, 255, 0), 2)
-                cv2.putText(frame, f'Speed: {speed:.2f} Direction: {direction:.2f}', (int(a), int(b)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-            prev_points = next_points
-    except cv2.error as e:
-        print(f"Optical flow error: {e}")
-        prev_points = None  # Reset the points on error
-
-    prev_frame = gray_frame
-    return frame
-
-def detect_and_alert(frame):
-    global detections_summary
-    global frame_count
-
-    if frame_count % 1 == 0:  # Process every 4th frame
-        results = model.predict(frame)[0]
-        alerts = []
-
-        frame = track_objects(frame, results)
-
-        for result in results.boxes:
-            box = result.xyxy[0].cpu().numpy()
-            cls = int(result.cls[0].cpu().numpy())
-            conf = result.conf[0].cpu().numpy()
-
-            if cls == human_class:
-                distance = estimate_distance(box)
-                if is_near(distance):
-                    alerts.append(box)
-                label = model.names[int(cls)]
-                cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 0, 0), 2)
-                cv2.putText(frame, f'{label} {conf:.2f} Dist: {distance:.2f}m', (int(box[0]), int(box[1])-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
-                detections_summary["pedestrians_detected"] += 1
-            elif cls in vehicle_classes:
-                label = model.names[int(cls)]
-                cv2.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
-                cv2.putText(frame, f'{label} {conf:.2f}', (int(box[0]), int(box[1])-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                detections_summary["vehicles_detected"] += 1
-
-        detections_summary["total_detections"] = detections_summary["pedestrians_detected"] + detections_summary["vehicles_detected"]
-        
-        if alerts:
-            threading.Thread(target=send_alert).start()
-
-    frame_count += 1
-    return frame
-
-def generate_frames():
-    global camera_active
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Error: Could not open video capture.")
-        return
-    while camera_active:
-        success, frame = cap.read()
-        if not success:
-            print("Error: Failed to read frame from camera.")
-            break
-        frame = detect_and_alert(frame)
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-    cap.release()
-
-def detect_file(filepath):
-    cap = cv2.VideoCapture(filepath)
-    if not cap.isOpened():
-        print("Error: Could not open video file.")
-        return
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = detect_and_alert(frame)
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-    cap.release()
-
-def detect_photo(filepath):
-    """
-    Detect objects in a photo (single image).
-    """
-    frame = cv2.imread(filepath)
-    if frame is None:
-        print("Error: Could not read image.")
-        return None
-
-    frame = detect_and_alert(frame)
-    ret, buffer = cv2.imencode('.jpg', frame)
-    return buffer.tobytes()
-
-
+def record_detection(obj_type, distance):
+    ts = datetime.utcnow().isoformat()
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("INSERT INTO detections (ts, obj_type, distance) VALUES (?, ?, ?)", (ts, obj_type, distance))
+    conn.commit()
+    conn.close()
+    return {"ts": ts, "obj_type": obj_type, "distance": distance}
 
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-@app.route('/video_feed')
-def video_feed():
-    global camera_active
-    if camera_active:
-        return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-    else:
-        return "", 204
-
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return 'No file part'
-    file = request.files['file']
-    if file.filename == '':
-        return 'No selected file'
-    if file:
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return filename
-
-@app.route('/upload_video_feed', methods=['POST'])
-def upload_video_feed():
-    if 'file' not in request.files:
-        return 'No file part'
-    file = request.files['file']
-    if file.filename == '':
-        return 'No selected file'
-    if file:
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return Response(detect_file(os.path.join(app.config['UPLOAD_FOLDER'], filename)), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/upload_photo', methods=['POST'])
-def upload_photo():
-    """
-    Endpoint to upload a photo and return the annotated image.
-    """
-    if 'file' not in request.files:
-        return 'No file part'
-    file = request.files['file']
-    if file.filename == '':
-        return 'No selected file'
-    if file:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        detected_image = detect_photo(filepath)
-        if detected_image is not None:
-            return Response(detected_image, mimetype='image/jpeg')
-        else:
-            return 'Error processing image', 500
+    return render_template("index.html")
 
 @app.route('/stats')
 def stats():
-    global detections_summary
-    return jsonify(detections_summary)
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM detections")
+    total = c.fetchone()[0]
+    conn.close()
+    return jsonify({"total_detections": total, "threshold": settings["threshold"], "alerts_enabled": settings["alerts_enabled"]})
+
+@app.route('/history')
+def history():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT ts, obj_type, distance FROM detections ORDER BY id DESC LIMIT 50")
+    rows = c.fetchall()
+    conn.close()
+    return jsonify([{"ts": r[0], "obj_type": r[1], "distance": r[2]} for r in rows])
+
+@app.route('/set_threshold', methods=["POST"])
+def set_threshold():
+    data = request.json or {}
+    try:
+        t = float(data.get("threshold"))
+        settings["threshold"] = t
+        return jsonify({"ok": True, "threshold": settings["threshold"]})
+    except Exception:
+        return jsonify({"ok": False}), 400
+
+@app.route('/toggle_alert', methods=["POST"])
+def toggle_alert():
+    data = request.json or {}
+    enabled = bool(data.get("enabled"))
+    settings["alerts_enabled"] = enabled
+    return jsonify({"ok": True, "alerts_enabled": settings["alerts_enabled"]})
+
+@app.route('/upload_photo', methods=["POST"])
+def upload_photo():
+    f = request.files.get("file")
+    if not f:
+        return "No file", 400
+    filename = secure_filename(f.filename)
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    f.save(path)
+    # Placeholder: analyze image -> here we simulate detection
+    # In real app call your detector and get distance/object type
+    simulated = simulate_detection_from_file(path)
+    det = record_detection(simulated["obj_type"], simulated["distance"])
+    # Emit via socket if below threshold and alerts enabled
+    if settings["alerts_enabled"] and det["distance"] <= settings["threshold"]:
+        socketio.emit('detection', det)
+    return jsonify({"ok": True, "detection": det})
+
+@app.route('/upload_video_feed', methods=["POST"])
+def upload_video_feed():
+    f = request.files.get("file")
+    if not f:
+        return "No file", 400
+    filename = secure_filename(f.filename)
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    f.save(path)
+    # In production you may spawn a background worker to process frames
+    # Here we simulate multiple detections asynchronously
+    threading.Thread(target=simulate_video_processing, args=(path,)).start()
+    return jsonify({"ok": True, "message": "Video uploaded. Processing started."})
+
+def simulate_detection_from_file(path):
+    # Simple simulation: choose object and distance based on filename hash
+    h = sum(bytearray(path.encode('utf-8'))) % 10
+    obj = "pedestrian" if h % 2 == 0 else "vehicle"
+    distance = round(0.5 + (h / 10.0) * 5.0, 2)
+    return {"obj_type": obj, "distance": distance}
+
+def simulate_video_processing(path):
+    # Emit some simulated detections spaced over time
+    for i in range(4):
+        det = simulate_detection_from_file(path + str(i))
+        rec = record_detection(det["obj_type"], det["distance"])
+        if settings["alerts_enabled"] and rec["distance"] <= settings["threshold"]:
+            socketio.emit('detection', rec)
+        time.sleep(2)
+
+@socketio.on('connect')
+def handle_connect():
+    emit('settings', settings)
 
 if __name__ == '__main__':
-    app.run(debug=True)
-
+    init_db()
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
