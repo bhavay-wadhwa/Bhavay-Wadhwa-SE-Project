@@ -96,6 +96,19 @@
 
     <script>
         // Poll backend every second to check for proximity alert
+        function toggleCamera() {
+    fetch('/toggle_camera', { method: 'POST' })
+        .then(response => response.text())
+        .then(message => {
+            // update status text
+            document.getElementById('camera-status').innerText = message;
+            // set image src to video feed if camera turned on, otherwise blank
+            document.getElementById('camera-feed').src = message.toLowerCase().includes('on') ? '/video_feed' : '';
+            // update button text/icon optional:
+            document.getElementById('toggle-camera-btn').innerHTML = (message.toLowerCase().includes('on') ? '<i class="fas fa-video-slash"></i> Turn Camera Off' : '<i class="fas fa-video"></i> Toggle Camera');
+        })
+        .catch(error => console.error('Error toggling camera:', error));
+}
         function checkAlert() {
             fetch('/stats')
                 .then(response => response.json())
@@ -135,6 +148,13 @@
         <div id="proximity-alert">
             ⚠️ PROXIMITY ALERT! Object too close.
         </div>
+        <!-- Camera status / toggle -->
+    <h3 id="camera-status">Camera turned off</h3>
+    <button id="toggle-camera-btn" onclick="toggleCamera()">
+      <i class="fas fa-video"></i> Toggle Camera
+    </button>
+        <!-- Camera feed image (will show /video_feed when camera is on) -->
+    <img id="camera-feed" src="" width="640" height="480" alt="Camera feed" />
 
     </main>
 </body>
