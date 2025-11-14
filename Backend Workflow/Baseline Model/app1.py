@@ -71,6 +71,16 @@ def set_threshold():
     except Exception:
         return jsonify({"ok": False}), 400
 
+@app.route('/toggle_camera', methods=['POST'])
+def toggle_camera():
+    """
+    Toggle the camera_active flag. Returns a small status message used by the front-end.
+    """
+    global camera_active
+    camera_active = not camera_active
+    return ("Camera turned on" if camera_active else "Camera turned off"), 200
+
+
 @app.route('/toggle_alert', methods=["POST"])
 def toggle_alert():
     data = request.json or {}
@@ -130,4 +140,5 @@ def handle_connect():
 
 if __name__ == '__main__':
     init_db()
+
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
