@@ -122,6 +122,27 @@ SE-Pedestrian-and-Vehicle-Detection-RT/
 
 This project successfully demonstrates an **AI-powered real-time detection and alert system** for vehicles and pedestrians. It lays the groundwork for future **smart transportation and safety systems**, combining **deep learning**, **computer vision**, and **edge computing** to improve road safety and situational awareness.
 
+---
+
+## Distance Estimation
+
+We implemented multiple distance estimation methods under `src/distance_methods/`. Place camera calibration parameters under `src/config` or pass as `camera_params` at runtime.
+
+Available methods:
+- **pinhole** — `pinhole_method.py` (fast; requires calibrated focal length).
+- **bbox** — `bbox_pixel_method.py` (fitted inverse model; fast & simple).
+- **stereo** — `stereo_depth.py` (requires rectified stereo pair and baseline).
+- **midas** — `midas_depth.py` (monocular deep model; requires MiDaS installation).
+
+### How to use
+- Add `src/distance_methods/` files to your repo.
+- Use wrapper `src/distance_estimation.py`:
+```python
+from distance_estimation import estimate_distance_for_bbox
+d = estimate_distance_for_bbox('pinhole', bbox, class_name='person', camera_params={'focal_length_px': 1200})
+
+---
+
 ## UML Diagrams
 
 PlantUML source files: `Diagrams/uml/`  
