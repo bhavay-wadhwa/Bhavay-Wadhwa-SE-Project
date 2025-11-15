@@ -140,8 +140,20 @@ java -jar plantuml.jar Diagrams/uml/*.puml
 # saves PNG files next to the .puml files or in the same folder depending on PlantUML options
 # move images into Diagrams/output/ and commit them
 
-![Class Diagram](diagrams/output/class_diagram.png)
-![Class Diagram](diagrams/output/usecase.png)
-![Class Diagram](diagrams/output/sequence_process_frame.png)
-![Class Diagram](diagrams/output/activity_pipeline_diagram.png)
+---
 
+## 📌 UML Diagrams
+
+Below are the UML diagrams for the project architecture.
+
+### 🟦 Class Diagram
+![Class Diagram](diagrams/output/class_diagram.png)
+
+### 🟩 Sequence Diagram
+![Sequence Diagram](diagrams/output/sequence_process_frame.png)
+
+### 🟨 Activity Diagram
+![Activity Diagram](diagrams/output/activity_pipeline_diagram.png)
+
+### 🟧 Use Case Diagram
+![Use Case Diagram](diagrams/output/usecase.png)
