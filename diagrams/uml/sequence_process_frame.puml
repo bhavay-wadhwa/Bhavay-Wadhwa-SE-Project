@@ -1,0 +1,27 @@
+@startuml
+actor Operator
+participant Camera as "Camera / Video"
+participant App as "src/app.py (Flask)"
+participant Detection as "src/detection.py"
+participant Tracking as "src/tracking.py"
+participant Distance as "src/distance_estimation.py"
+participant Alerts as "src/alerts.py"
+participant Visualizer as "src/visualizer.py"
+participant Storage as "results/"
+
+Operator -> Camera: start_stream()
+Camera -> App: send_frame(frame)
+App -> Detection: preprocess_and_infer(frame)
+Detection --> App: detections (bboxes, scores, classes)
+App -> Tracking: update(detections)
+Tracking --> App: tracks
+App -> Distance: estimate_distance(detections or tracks)
+Distance --> App: distances_list
+App -> Alerts: check_thresholds(distances_list)
+Alerts --> App: alert_info (if any)
+App -> Visualizer: draw_boxes(frame, detections, tracks, distances)
+Visualizer --> App: annotated_frame
+App -> Storage: log_event(detections, tracks, distances, alerts)
+App -> Operator (via UI): stream_frame(annotated_frame)
+@enduml
+
